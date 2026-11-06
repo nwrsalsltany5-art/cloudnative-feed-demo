@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CloudNative Feed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg-page: #f5f7fa;
+      --card-bg: #ffffff;
+      --text-primary: #121826;
+      --text-secondary: #6c7a91;
+      --accent-blue: #00b4d8;
+      --accent-blue-hover: #0096c7;
+      --like-red: #ff3b5c;
+      --card-radius: 20px;
+      --shadow-card: 0 8px 24px rgba(149, 157, 165, 0.08);
+      --shadow-dock: 0 -4px 20px rgba(0, 0, 0, 0.05);
+      --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 480px;
+      background-color: var(--bg-page);
+      position: relative;
+      padding-bottom: 90px;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.03);
+    }
+
+    .top-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(245, 247, 250, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+    }
+
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+    }
+
+    .pod-pill {
+      background: rgba(0, 180, 216, 0.1);
+      color: var(--accent-blue);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pod-pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--accent-blue);
+      box-shadow: 0 0 8px var(--accent-blue);
+    }
+
+    .feed-container {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .post-card {
+      background: var(--card-bg);
+      border-radius: var(--card-radius);
+      padding: 16px;
+      box-shadow: var(--shadow-card);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .post-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar-img {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .user-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .user-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .user-bio {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .options-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-secondary);
+      padding: 4px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .image-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: 16px;
+      overflow: hidden;
+      background-color: #e2e8f0;
+      aspect-ratio: 4 / 3;
+      cursor: pointer;
+    }
+
+    .post-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+
+    .bookmark-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 10px;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .bookmark-badge:active {
+      transform: scale(0.9);
+    }
+
+    .center-heart-pop {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      color: #ffffff;
+      opacity: 0;
+      pointer-events: none;
+      filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+      z-index: 10;
+    }
+
+    @keyframes heartPop {
+      0% {
+        transform: translate(-50%, -50%) scale(0);
+        opacity: 0;
+      }
+
+      50% {
+        transform: translate(-50%, -50%) scale(1.3);
+        opacity: 0.95;
+      }
+
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 0;
+      }
+    }
+
+    .center-heart-pop.animate {
+      animation: heartPop 0.75s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    .action-bar {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-top: 14px;
+      padding-left: 4px;
+    }
+
+    .action-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-main);
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: color 0.2s ease, transform 0.15s ease;
+    }
+
+    .action-item:active {
+      transform: scale(0.92);
+    }
+
+    .action-item svg {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: fill 0.2s ease, stroke 0.2s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .action-item.liked {
+      color: var(--like-red);
+    }
+
+    .action-item.liked svg {
+      fill: var(--like-red);
+      stroke: var(--like-red);
+      animation: heartBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes heartBounce {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.4);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .bottom-dock-wrapper {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      z-index: 60;
+      pointer-events: none;
+    }
+
+    .bottom-dock {
+      pointer-events: auto;
+      position: relative;
+      background: #ffffff;
+      height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 10px;
+      box-shadow: var(--shadow-dock);
+      border-top-left-radius: 24px;
+      border-top-right-radius: 24px;
+    }
+
+    .dock-item {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #94a3b8;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s ease;
+    }
+
+    .dock-item.active {
+      color: var(--accent-blue);
+    }
+
+    .fab-wrapper {
+      position: relative;
+      top: -22px;
+      background: #ffffff;
+      padding: 6px;
+      border-radius: 50%;
+      box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.04);
+    }
+
+    .fab-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+      border: none;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0, 114, 255, 0.35);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .fab-btn:active {
+      transform: scale(0.92);
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 100;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .comments-sheet {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%) translateY(100%);
+      width: 100%;
+      max-width: 480px;
+      height: 75vh;
+      background: #ffffff;
+      border-top-left-radius: 28px;
+      border-top-right-radius: 28px;
+      z-index: 101;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-overlay.active .comments-sheet {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .sheet-handle-bar {
+      width: 100%;
+      padding: 12px 0 8px 0;
+      display: flex;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .sheet-handle {
+      width: 40px;
+      height: 5px;
+      border-radius: 10px;
+      background: #e2e8f0;
+    }
+
+    .sheet-header {
+      padding: 10px 20px 16px 20px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sheet-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .sheet-close {
+      background: #f1f5f9;
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-weight: bold;
+      color: var(--text-secondary);
+    }
+
+    .comments-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .comment-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      animation: commentFade 0.3s ease forwards;
+    }
+
+    @keyframes commentFade {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .comment-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .comment-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .comment-header-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+
+    .comment-author {
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .comment-time {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .comment-text {
+      color: #334155;
+      font-size: 0.86rem;
+    }
+
+    .comment-pod-tag {
+      font-size: 0.68rem;
+      background: #f1f5f9;
+      color: #64748b;
+      padding: 2px 6px;
+      border-radius: 6px;
+      margin-left: 4px;
+      font-weight: 600;
+    }
+
+    .comment-like-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      color: #94a3b8;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 4px;
+      transition: color 0.15s ease, transform 0.15s ease;
+    }
+
+    .comment-like-btn:active {
+      transform: scale(0.85);
+    }
+
+    .comment-like-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      transition: fill 0.2s ease, stroke 0.2s ease;
+    }
+
+    .comment-like-btn.liked {
+      color: var(--like-red);
+    }
+
+    .comment-like-btn.liked svg {
+      fill: var(--like-red);
+      stroke: var(--like-red);
+    }
+
+    .sheet-footer {
+      padding: 12px 16px;
+      border-top: 1px solid #f1f5f9;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      background: #ffffff;
+    }
+
+    .comment-input {
+      flex: 1;
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      border-radius: 20px;
+      padding: 10px 16px;
+      font-family: var(--font-main);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .comment-input:focus {
+      border-color: var(--accent-blue);
+      background: #ffffff;
+    }
+
+    .send-btn {
+      background: var(--accent-blue);
+      color: #ffffff;
+      border: none;
+      border-radius: 20px;
+      padding: 10px 18px;
+      font-family: var(--font-main);
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+
+    .send-btn:active {
+      transform: scale(0.95);
+    }
+
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: #1e293b;
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      z-index: 200;
+      opacity: 0;
+      transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="top-header">
+      <h1 class="brand-title">Feed</h1>
+      <div class="pod-pill">
+        <span class="pod-pill-dot"></span>
+        <span id="pod-name-display">{{.PodName}}</span>
+      </div>
+    </header>
+    <main class="feed-container" id="feed-container">
+      <div style="text-align:center; padding:40px; color:var(--text-secondary); font-weight:600;">
+        Loading live infrastructure feed...
+      </div>
+    </main>
+    <div class="bottom-dock-wrapper">
+      <nav class="bottom-dock">
+        <button class="dock-item active" onclick="showToast('🏠 You are on the Home Feed')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" />
+          </svg>
+        </button>
+        <button class="dock-item" onclick="showToast('💬 Messages Feature Coming Soon')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </button>
+        <div class="fab-wrapper">
+          <button class="fab-btn" onclick="showToast('⚡ Create Post Feature Coming Soon')">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+              stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+        </div>
+        <button class="dock-item" onclick="showToast('🔔 Notifications Feature Coming Soon')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+        </button>
+        <button class="dock-item" onclick="showToast('👤 Profile Feature Coming Soon')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </button>
+      </nav>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="comments-overlay">
+    <div class="comments-sheet">
+      <div class="sheet-handle-bar" onclick="closeCommentsModal()">
+        <div class="sheet-handle"></div>
+      </div>
+      <div class="sheet-header">
+        <span class="sheet-title">Comments</span>
+        <button class="sheet-close" onclick="closeCommentsModal()">✕</button>
+      </div>
+      <div class="comments-list" id="modal-comments-list"></div>
+      <div class="sheet-footer">
+        <input type="text" id="sheet-comment-input" class="comment-input" placeholder="Add a comment..."
+          onkeyup="handleCommentKeyPress(event)">
+        <button class="send-btn" onclick="submitModalComment()">Post</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast-banner">Notification</div>
+
+  <script>
+    const demoAuthors = [
+      { name: "Michael Bruno", bio: "Traveler, Life Lover", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" },
+      { name: "Emma Stone", bio: "Photographer & Visual Artist", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100&auto=format&fit=crop&q=80" },
+      { name: "Lucas Vance", bio: "DevOps Engineer @ CloudNative", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80" },
+      { name: "Sophia Chen", bio: "Kubernetes Architect", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80" },
+      { name: "David Miller", bio: "Site Reliability Specialist", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80" }
+    ];
+
+    const mockCommentsPool = [
+      { author: "Alex Rivera", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&q=80", text: "This infrastructure scaling looks super smooth! 🔥", likes: 14, liked: false, time: "2h" },
+      { author: "DevOps_Bot", avatar: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=80&q=80", text: "Processed live with zero latency spike.", likes: 8, liked: false, time: "1h" },
+      { author: "Sara Connor", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&q=80", text: "Love the rounded card design! What font are you using?", likes: 5, liked: false, time: "45m" },
+      { author: "Marcus Vance", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80", text: "Tested on iPhone 15 Pro, 60fps animations are slick ⚡", likes: 19, liked: false, time: "30m" },
+      { author: "Elena Rostova", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=80&q=80", text: "Awesome responsive layout!", likes: 3, liked: false, time: "20m" },
+      { author: "K8s_Admin", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&q=80", text: "HPA rules scaling like magic under load test 🚀", likes: 12, liked: false, time: "10m" }
+    ];
+
+    const likedPhotosMap = new Set();
+    const photoCommentsMap = {};
+    let activePhotoIdForComments = null;
+
+    async function fetchFeed() {
+      try {
+        const response = await fetch('/api/feed');
+        const photos = await response.json();
+        renderFeed(photos);
+      } catch (err) {
+        console.error("Failed to load feed:", err);
+      }
+    }
+
+    function renderFeed(photos) {
+      const container = document.getElementById('feed-container');
+      let html = '';
+
+      photos.forEach((photo, idx) => {
+        const author = demoAuthors[idx % demoAuthors.length];
+        const shareCount = 12 + (photo.id * 3);
+
+        if (!photoCommentsMap[photo.id]) {
+          photoCommentsMap[photo.id] = mockCommentsPool.map((c, i) => ({
+            id: `c-${photo.id}-${i}`,
+            ...c,
+            likes: c.likes + (photo.id % 4)
+          }));
+        }
+
+        const commentsCount = photoCommentsMap[photo.id].length;
+        const isLiked = likedPhotosMap.has(photo.id);
+
+        html += `
+                    <article class="post-card" id="post-${photo.id}">
+                        <div class="post-header">
+                            <div class="user-info">
+                                <img class="avatar-img" src="${author.avatar}" alt="${author.name}">
+                                <div class="user-details">
+                                    <span class="user-name">${author.name}</span>
+                                    <span class="user-bio">${author.bio}</span>
+                                </div>
+                            </div>
+                            <button class="options-btn" onclick="showToast('⚙️ Post options coming soon')">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                            </button>
+                        </div>
+                        <div class="image-wrapper" onclick="handleImageTap(${photo.id}, event)">
+                            <img class="post-image" src="${photo.image_url}" alt="${photo.title}" onerror="this.src='https://picsum.photos/seed/${photo.id}/600/450'">
+                            <div class="bookmark-badge" onclick="event.stopPropagation(); showToast('🔖 Bookmark Saved!')">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                            </div>
+                            <div class="center-heart-pop" id="heart-pop-${photo.id}">
+                                <svg width="80" height="80" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                            </div>
+                        </div>
+                        <div class="action-bar">
+                            <button class="action-item ${isLiked ? 'liked' : ''}" id="like-btn-${photo.id}" onclick="toggleLikePhoto(${photo.id})">
+                                <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                <span id="like-count-${photo.id}">${photo.likes_count}</span>
+                            </button>
+                            <button class="action-item" onclick="openCommentsModal(${photo.id})">
+                                <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                <span id="comment-count-${photo.id}">${commentsCount}</span>
+                            </button>
+                            <button class="action-item" onclick="showToast('🚀 Share Feature Coming Soon')">
+                                <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                                <span>${shareCount}</span>
+                            </button>
+                        </div>
+                    </article>
+                `;
+      });
+      container.innerHTML = html;
+    }
+
+    let lastTapTime = 0;
+    function handleImageTap(photoId, event) {
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTapTime;
+      if (tapLength < 300 && tapLength > 0) {
+        triggerHeartPop(photoId);
+        if (!likedPhotosMap.has(photoId)) toggleLikePhoto(photoId);
+        event.preventDefault();
+      }
+      lastTapTime = currentTime;
+    }
+
+    function triggerHeartPop(photoId) {
+      const heart = document.getElementById(`heart-pop-${photoId}`);
+      if (!heart) return;
+      heart.classList.remove('animate');
+      void heart.offsetWidth;
+      heart.classList.add('animate');
+    }
+
+    async function toggleLikePhoto(photoId) {
+      const likeBtn = document.getElementById(`like-btn-${photoId}`);
+      const countSpan = document.getElementById(`like-count-${photoId}`);
+      let currentLikes = parseInt(countSpan.innerText) || 0;
+
+      if (likedPhotosMap.has(photoId)) {
+        likedPhotosMap.delete(photoId);
+        likeBtn.classList.remove('liked');
+        countSpan.innerText = Math.max(0, currentLikes - 1);
+      } else {
+        likedPhotosMap.add(photoId);
+        likeBtn.classList.add('liked');
+        countSpan.innerText = currentLikes + 1;
+        triggerHeartPop(photoId);
+        try {
+          const res = await fetch(`/api/photos/${photoId}/like`, { method: 'POST' });
+          const data = await res.json();
+          if (data && data.likes) countSpan.innerText = data.likes;
+        } catch (e) { console.error("Like API error:", e); }
+      }
+    }
+
+    function openCommentsModal(photoId) {
+      activePhotoIdForComments = photoId;
+      document.getElementById('comments-overlay').classList.add('active');
+      renderCommentsList(photoId);
+    }
+
+    function closeCommentsModal() {
+      document.getElementById('comments-overlay').classList.remove('active');
+      activePhotoIdForComments = null;
+    }
+
+    function renderCommentsList(photoId) {
+      const commentsList = document.getElementById('modal-comments-list');
+      const comments = photoCommentsMap[photoId] || [];
+      const podName = document.getElementById('pod-name-display').innerText;
+
+      commentsList.innerHTML = comments.map(c => `
+                <div class="comment-item">
+                    <img class="comment-avatar" src="${c.avatar}" alt="${c.author}">
+                    <div class="comment-content">
+                        <div class="comment-header-row">
+                            <span class="comment-author">${c.author}</span>
+                            <span class="comment-time">${c.time}</span>
+                        </div>
+                        <div class="comment-text">
+                            ${c.text} ${c.isUser ? `<span class="comment-pod-tag">${podName}</span>` : ''}
+                        </div>
+                    </div>
+                    <button class="comment-like-btn ${c.liked ? 'liked' : ''}" onclick="toggleCommentLike('${photoId}', '${c.id}')">
+                        <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                        <span>${c.likes > 0 ? c.likes : ''}</span>
+                    </button>
+                </div>
+            `).join('');
+    }
+
+    function toggleCommentLike(photoId, commentId) {
+      const comments = photoCommentsMap[photoId];
+      if (!comments) return;
+      const comment = comments.find(c => c.id === commentId);
+      if (!comment) return;
+      comment.liked = !comment.liked;
+      comment.likes += comment.liked ? 1 : -1;
+      renderCommentsList(photoId);
+    }
+
+    function handleCommentKeyPress(e) {
+      if (e.key === 'Enter') submitModalComment();
+    }
+
+    async function submitModalComment() {
+      const input = document.getElementById('sheet-comment-input');
+      const message = input.value.trim();
+      if (!message || !activePhotoIdForComments) return;
+
+      const photoId = activePhotoIdForComments;
+      const comments = photoCommentsMap[photoId];
+
+      comments.push({
+        id: `c-${photoId}-${Date.now()}`,
+        author: "You",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+        text: message,
+        likes: 0, liked: false, time: "Just now", isUser: true
+      });
+
+      renderCommentsList(photoId);
+      const commentsList = document.getElementById('modal-comments-list');
+      commentsList.scrollTop = commentsList.scrollHeight;
+      input.value = '';
+
+      const countSpan = document.getElementById(`comment-count-${photoId}`);
+      if (countSpan) countSpan.innerText = comments.length;
+
+      try {
+        await fetch(`/api/photos/${photoId}/comment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ author: 'Audience User', message: message })
+        });
+      } catch (e) { console.error("Comment API error:", e); }
+    }
+
+    let toastTimeout;
+    function showToast(message) {
+      const toast = document.getElementById('toast-banner');
+      toast.innerText = message;
+      toast.classList.add('show');
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    fetchFeed();
+  </script>
+</body>
+
+</html>

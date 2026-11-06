@@ -1,0 +1,12 @@
+{
+  "files.associations": {
+    "*.yaml": "yaml",
+    "*.yml": "yaml"
+  },
+  "editor.tabSize": 2,
+  "editor.formatOnSave": true,
+  "go.formatTool": "gofmt",
+  "files.exclude": {
+    "**/.git": true
+  }
+}

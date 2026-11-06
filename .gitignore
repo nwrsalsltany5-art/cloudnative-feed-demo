@@ -1,0 +1,18 @@
+# Logs
+deploy.log
+qr.png
+
+# Downloaded images
+public-app/static/images/*.jpg
+
+# Go builds
+public-app/server
+*.exe
+*.test
+*.out
+
+# IDE
+.DS_Store
+.idea/
+*.swp
+*~
