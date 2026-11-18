@@ -1,0 +1,38 @@
+These local 600x450 photo assets were downloaded from the Lorem Picsum image
+service on 2026-11-15. Picsum's image list identifies the corresponding
+photographers and original Unsplash pages below. Attribution is included here
+for the demo; review the Unsplash License before redistributing these assets.
+
+photo-1.jpg - Alejandro Escamilla
+https://unsplash.com/photos/yC-Yzbqy7PY
+photo-2.jpg - Alejandro Escamilla
+https://unsplash.com/photos/LNRyGwIJr5c
+photo-3.jpg - Alejandro Escamilla
+https://unsplash.com/photos/N7XodRrbzS0
+photo-4.jpg - Alejandro Escamilla
+https://unsplash.com/photos/Dl6jeyfihLk
+photo-5.jpg - Alejandro Escamilla
+https://unsplash.com/photos/y83Je1OC6Wc
+photo-6.jpg - Alejandro Escamilla
+https://unsplash.com/photos/LF8gK8-HGSg
+photo-7.jpg - Alejandro Escamilla
+https://unsplash.com/photos/tAKXap853rY
+photo-8.jpg - Alejandro Escamilla
+https://unsplash.com/photos/BbQLHCpVUqA
+photo-9.jpg - Alejandro Escamilla
+https://unsplash.com/photos/xII7efH1G6o
+photo-10.jpg - Alejandro Escamilla
+https://unsplash.com/photos/ABDTiLqDhJA
+photo-11.jpg - Paul Jarvis
+https://unsplash.com/photos/6J--NXulQCs
+photo-12.jpg - Paul Jarvis
+https://unsplash.com/photos/Cm7oKel-X2Q
+photo-13.jpg - Paul Jarvis
+https://unsplash.com/photos/I_9ILwtsl_k
+photo-14.jpg - Paul Jarvis
+https://unsplash.com/photos/3MtiSMdnoCo
+photo-15.jpg - Paul Jarvis
+https://unsplash.com/photos/IQ1kOQTJrOQ
+
+License information: https://unsplash.com/license
+Image source documentation: https://picsum.photos/
