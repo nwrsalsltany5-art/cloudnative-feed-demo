@@ -771,7 +771,9 @@ func (a *application) authRequest(ctx context.Context, method, path string, body
 		return nil, 0, fmt.Errorf("create Supabase Auth request: %w", err)
 	}
 	request.Header.Set("apikey", apiKey)
-	request.Header.Set("Authorization", "Bearer "+bearer)
+	if bearer != "" && !(bearer == apiKey && isNewSupabaseAPIKey(apiKey)) {
+		request.Header.Set("Authorization", "Bearer "+bearer)
+	}
 	if contentType != "" {
 		request.Header.Set("Content-Type", contentType)
 	}

@@ -118,6 +118,68 @@ func TestFeedHandlerUsesServiceEndpointAndSetsVisitorCookie(t *testing.T) {
 	}
 }
 
+func TestNewSupabaseKeysAreConfiguredAndSentWithoutBearer(t *testing.T) {
+	requests := make(chan *http.Request, 3)
+	supabase := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requests <- r.Clone(r.Context())
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer supabase.Close()
+
+	t.Setenv("SUPABASE_URL", supabase.URL)
+	t.Setenv("APP_BASE_URL", "https://demo.example")
+	t.Setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_public")
+	t.Setenv("SUPABASE_SECRET_KEY", "sb_secret_private")
+	t.Setenv("SUPABASE_ANON_KEY", "legacy-anon")
+	t.Setenv("SUPABASE_SERVICE_ROLE_KEY", "legacy-service")
+	t.Setenv("VISITOR_HMAC_SECRET", strings.Repeat("s", 32))
+	t.Setenv("ADMIN_COOKIE_SECURE", "true")
+
+	app, err := newApplication()
+	if err != nil {
+		t.Fatalf("newApplication returned error: %v", err)
+	}
+	if app.anonKey != "sb_publishable_public" || app.serviceKey != "sb_secret_private" {
+		t.Fatalf("new-format keys not selected: publishable=%q secret=%q", app.anonKey, app.serviceKey)
+	}
+
+	if _, _, err := app.supabase(context.Background(), http.MethodGet, "/rest/v1/test", nil, true, ""); err != nil {
+		t.Fatalf("service request failed: %v", err)
+	}
+	if _, _, err := app.authRequest(context.Background(), http.MethodPost, "/auth/v1/token", nil, app.anonKey, app.anonKey, ""); err != nil {
+		t.Fatalf("publishable auth request failed: %v", err)
+	}
+	if _, _, err := app.authRequest(context.Background(), http.MethodGet, "/auth/v1/user", nil, app.anonKey, "user-access-token", ""); err != nil {
+		t.Fatalf("user auth request failed: %v", err)
+	}
+
+	serviceRequest := <-requests
+	if serviceRequest.Header.Get("apikey") != "sb_secret_private" || serviceRequest.Header.Get("Authorization") != "" {
+		t.Errorf("new secret key request headers are incorrect: apikey=%q authorization=%q", serviceRequest.Header.Get("apikey"), serviceRequest.Header.Get("Authorization"))
+	}
+	publishableRequest := <-requests
+	if publishableRequest.Header.Get("apikey") != "sb_publishable_public" || publishableRequest.Header.Get("Authorization") != "" {
+		t.Errorf("publishable-key request headers are incorrect: apikey=%q authorization=%q", publishableRequest.Header.Get("apikey"), publishableRequest.Header.Get("Authorization"))
+	}
+	userRequest := <-requests
+	if userRequest.Header.Get("apikey") != "sb_publishable_public" || userRequest.Header.Get("Authorization") != "Bearer user-access-token" {
+		t.Errorf("user-token request headers are incorrect: apikey=%q authorization=%q", userRequest.Header.Get("apikey"), userRequest.Header.Get("Authorization"))
+	}
+}
+
+func TestNewSupabaseKeyPairMustBeComplete(t *testing.T) {
+	t.Setenv("SUPABASE_URL", "http://127.0.0.1:54321")
+	t.Setenv("APP_BASE_URL", "https://demo.example")
+	t.Setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_public")
+	t.Setenv("SUPABASE_SECRET_KEY", "")
+	t.Setenv("SUPABASE_ANON_KEY", "legacy-anon")
+	t.Setenv("SUPABASE_SERVICE_ROLE_KEY", "legacy-service")
+	t.Setenv("VISITOR_HMAC_SECRET", strings.Repeat("s", 32))
+	if _, err := newApplication(); err == nil {
+		t.Fatal("incomplete new-format key pair unexpectedly fell back to legacy keys")
+	}
+}
+
 func TestSameOriginRequiresMatchingSchemeAndHost(t *testing.T) {
 	request := httptest.NewRequest(http.MethodPost, "https://demo.example/admin/api/access", nil)
 	request.Header.Set("Origin", "https://demo.example")

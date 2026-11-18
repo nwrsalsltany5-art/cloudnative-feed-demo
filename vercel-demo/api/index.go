@@ -113,8 +113,14 @@ func newApplication() (*application, error) {
 		(originURL.Scheme != "https" && !(originURL.Scheme == "http" && (originURL.Hostname() == "localhost" || originURL.Hostname() == "127.0.0.1"))) {
 		return nil, errors.New("APP_BASE_URL must be an HTTPS origin (HTTP is allowed only for localhost)")
 	}
-	anonKey := strings.TrimSpace(os.Getenv("SUPABASE_ANON_KEY"))
-	serviceKey := strings.TrimSpace(os.Getenv("SUPABASE_SERVICE_ROLE_KEY"))
+	anonKey := strings.TrimSpace(os.Getenv("SUPABASE_PUBLISHABLE_KEY"))
+	serviceKey := strings.TrimSpace(os.Getenv("SUPABASE_SECRET_KEY"))
+	if anonKey == "" && serviceKey == "" {
+		anonKey = strings.TrimSpace(os.Getenv("SUPABASE_ANON_KEY"))
+		serviceKey = strings.TrimSpace(os.Getenv("SUPABASE_SERVICE_ROLE_KEY"))
+	} else if anonKey == "" || serviceKey == "" {
+		return nil, errors.New("both SUPABASE_PUBLISHABLE_KEY and SUPABASE_SECRET_KEY are required")
+	}
 	visitorSecret := os.Getenv("VISITOR_HMAC_SECRET")
 	if anonKey == "" || serviceKey == "" || len(visitorSecret) < 32 {
 		return nil, errors.New("Supabase keys and a 32-byte visitor HMAC secret are required")
@@ -470,7 +476,9 @@ func (a *application) supabase(ctx context.Context, method, path string, body []
 		key = a.serviceKey
 	}
 	request.Header.Set("apikey", key)
-	request.Header.Set("Authorization", "Bearer "+key)
+	if !isNewSupabaseAPIKey(key) {
+		request.Header.Set("Authorization", "Bearer "+key)
+	}
 	if contentType != "" {
 		request.Header.Set("Content-Type", contentType)
 	}
@@ -487,6 +495,10 @@ func (a *application) supabase(ctx context.Context, method, path string, body []
 		return nil, response.StatusCode, fmt.Errorf("read Supabase response: %w", err)
 	}
 	return responseBody, response.StatusCode, nil
+}
+
+func isNewSupabaseAPIKey(key string) bool {
+	return strings.HasPrefix(key, "sb_publishable_") || strings.HasPrefix(key, "sb_secret_")
 }
 
 func decodeOneJSON(reader io.Reader, target any) error {

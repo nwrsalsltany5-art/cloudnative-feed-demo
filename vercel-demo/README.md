@@ -14,7 +14,7 @@ The Go runtime on Vercel is currently Beta. A successful local build does not pr
 - Real API request/error/latency/activity counts are stored in one-minute buckets for seven days; demo simulation records are retained for 30 days.
 - CPU, memory, requests-per-second, replicas, HPA state, and alerts are explicitly simulated. The fixed 90-second scenario models 10 virtual users, scale-up, and cooldown using a persisted run record; it does not send load to Vercel or run Kubernetes/k6. Routine dashboard polling remains real app traffic.
 
-Static image/font requests are not included in application metrics. Supabase service-role access is server-side only; it must never be copied into browser code or static assets.
+Static image/font requests are not included in application metrics. Supabase secret-key access is server-side only; it must never be copied into browser code or static assets.
 
 ## Prerequisites
 
@@ -68,14 +68,16 @@ The app's owner-triggered password-reset requests use `APP_BASE_URL/admin/passwo
 4. Add these environment variables in the Vercel project settings for Preview and Production as appropriate:
    - `APP_BASE_URL` (the exact Vercel deployment origin, without a path)
    - `SUPABASE_URL`
-   - `SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `SUPABASE_PUBLISHABLE_KEY`
+   - `SUPABASE_SECRET_KEY` (server-only/sensitive; never expose to the browser)
    - `VISITOR_HMAC_SECRET` (random, at least 32 bytes)
    - `ADMIN_COOKIE_SECURE=true`
 5. Deploy a Preview first. Verify static image delivery, feed reads, photo likes, comments, durable comment likes, admin login, role enforcement, metrics persistence, and the simulation's baseline → scale-up → cooldown transitions and history. Check function and Supabase logs for errors; never paste secret values into logs or chat.
 6. Only promote a Preview after every item in the acceptance checklist below passes and provider usage is within the approved free-plan limits.
 
 The Vercel project must use `vercel-demo/` as its root so it does not need AWS credentials, EKS, Cognito, Prometheus, or the original app's runtime. The Vercel Go runtime is Beta; if a Preview does not build or route correctly, stop and get approval before changing the language/framework or paid plan.
+
+The app also accepts the legacy `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` variables when neither new-format variable is set. Use one complete pair, not a mixture. New-format keys are sent only in Supabase's `apikey` header; legacy JWT keys continue to use both `apikey` and `Authorization` where needed. If a secret key was exposed, rotate it in Supabase before deploying and update the Vercel environment variable with the replacement.
 
 ## Acceptance checklist
 
