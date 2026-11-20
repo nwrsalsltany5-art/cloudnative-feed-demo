@@ -118,6 +118,57 @@ func TestFeedHandlerUsesServiceEndpointAndSetsVisitorCookie(t *testing.T) {
 	}
 }
 
+func TestCommentActionsStayScopedToRequestedPhoto(t *testing.T) {
+	requestedPhotoID := 0
+	supabase := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/rest/v1/rpc/get_comments":
+			var payload struct {
+				PhotoID int `json:"p_photo_id"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+				t.Errorf("decode get_comments payload: %v", err)
+			}
+			requestedPhotoID = payload.PhotoID
+			_, _ = w.Write([]byte("[]"))
+		case r.URL.Path == "/rest/v1/comments":
+			var payload struct {
+				PhotoID int `json:"photo_id"`
+			}
+			if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+				t.Errorf("decode create comment payload: %v", err)
+			}
+			requestedPhotoID = payload.PhotoID
+			w.WriteHeader(http.StatusCreated)
+			_, _ = w.Write([]byte(`[{"id":7,"author":"Audience User","message":"Only for this post","likes_count":0,"created_at":"2026-01-01T00:00:00Z"}]`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer supabase.Close()
+
+	app := &application{
+		supabaseURL: supabase.URL,
+		serviceKey:  "service-key",
+		client:      supabase.Client(),
+	}
+
+	getResponse := httptest.NewRecorder()
+	app.getComments(getResponse, httptest.NewRequest(http.MethodGet, "/api/photos/7/comments", nil), strings.Repeat("a", 64), 7)
+	if getResponse.Code != http.StatusOK || requestedPhotoID != 7 {
+		t.Fatalf("get comments status=%d photo_id=%d body=%s", getResponse.Code, requestedPhotoID, getResponse.Body.String())
+	}
+
+	requestedPhotoID = 0
+	createRequest := httptest.NewRequest(http.MethodPost, "/api/photos/7/comment", strings.NewReader(`{"message":"Only for this post"}`))
+	createRequest.Header.Set("Content-Type", "application/json")
+	createResponse := httptest.NewRecorder()
+	app.createComment(createResponse, createRequest, 7)
+	if createResponse.Code != http.StatusCreated || requestedPhotoID != 7 {
+		t.Fatalf("create comment status=%d photo_id=%d body=%s", createResponse.Code, requestedPhotoID, createResponse.Body.String())
+	}
+}
+
 func TestNewSupabaseKeysAreConfiguredAndSentWithoutBearer(t *testing.T) {
 	requests := make(chan *http.Request, 3)
 	supabase := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

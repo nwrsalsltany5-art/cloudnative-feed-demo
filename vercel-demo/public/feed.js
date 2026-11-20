@@ -118,19 +118,24 @@
     async function toggleLikePhoto(photoId) {
       const likeBtn = document.getElementById(`like-btn-${photoId}`);
       const countSpan = document.getElementById(`like-count-${photoId}`);
-      if (likedPhotosMap.has(photoId) || likeBtn.disabled) return;
+      if (!likeBtn || !countSpan || likeBtn.disabled) return;
+      const wasLiked = likedPhotosMap.has(photoId);
       likeBtn.disabled = true;
-      triggerHeartPop(photoId);
+      if (!wasLiked) triggerHeartPop(photoId);
       try {
         const response = await fetch(`/api/photos/${photoId}/like`, { method: 'POST' });
         if (!response.ok) throw new Error(`Like request failed with status ${response.status}`);
         const data = await response.json();
-        likedPhotosMap.add(photoId);
-        likeBtn.classList.add('liked');
+        if (typeof data.liked !== "boolean" || !Number.isFinite(Number(data.likes))) {
+          throw new Error("Like response is invalid");
+        }
+        if (data.liked) likedPhotosMap.add(photoId);
+        else likedPhotosMap.delete(photoId);
+        likeBtn.classList.toggle('liked', data.liked);
         countSpan.innerText = data.likes;
       } catch (error) {
         console.error("Like API error:", error);
-        showToast("Unable to like this photo. Please try again.");
+        showToast("Unable to update this photo's like. Please try again.");
       } finally {
         likeBtn.disabled = false;
       }
@@ -139,6 +144,7 @@
     function openCommentsModal(photoId) {
       activePhotoIdForComments = photoId;
       document.getElementById('comments-overlay').classList.add('active');
+      document.getElementById('modal-comments-list').textContent = "Loading comments...";
       loadComments(photoId);
     }
 
@@ -177,18 +183,21 @@
       if (!comments) return;
       const comment = comments.find(c => c.id === Number(commentId));
       const likeButton = document.getElementById(`comment-like-${commentId}`);
-      if (!comment || comment.liked || likeButton.disabled) return;
+      if (!comment || !likeButton || likeButton.disabled) return;
       likeButton.disabled = true;
       try {
         const response = await fetch(`/api/comments/${commentId}/like`, { method: 'POST' });
         if (!response.ok) throw new Error(`Comment like request failed with status ${response.status}`);
         const result = await response.json();
-        comment.liked = true;
-        comment.likes = result.likes;
+        if (typeof result.liked !== "boolean" || !Number.isFinite(Number(result.likes))) {
+          throw new Error("Comment like response is invalid");
+        }
+        comment.liked = result.liked;
+        comment.likes = Number(result.likes);
         renderCommentsList(photoId);
       } catch (error) {
         console.error("Comment like API error:", error);
-        showToast("Unable to like this comment. Please try again.");
+        showToast("Unable to update this comment's like. Please try again.");
       } finally {
         const updatedButton = document.getElementById(`comment-like-${commentId}`);
         if (updatedButton) updatedButton.disabled = false;
@@ -216,6 +225,9 @@
         if (countSpan) countSpan.innerText = savedComments.length;
       } catch (err) {
         console.error("Failed to load comments:", err);
+        if (activePhotoIdForComments === photoId) {
+          document.getElementById('modal-comments-list').textContent = "Unable to load comments. Please try again.";
+        }
         showToast("Unable to load comments. Please try again.");
       }
     }

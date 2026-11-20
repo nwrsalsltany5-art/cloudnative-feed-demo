@@ -42,9 +42,10 @@ The app has no third-party Go module dependencies. For local preview, set the va
 
 1. Create a Supabase project only after confirming the plan, limits, and signup/billing requirements.
 2. In the Supabase SQL Editor, run `supabase/migrations/001_init.sql`.
-3. Configure Auth email delivery first. The default SMTP server can deliver only to pre-authorized project-team addresses (and has a low send limit); use custom SMTP if these users are outside that team. Verify delivery before inviting.
-4. In Supabase Auth URL Configuration, set the Site URL to the deployed app origin and add `https://<deployment-host>/admin/password-update` to the redirect URL allow list. Invite the owner and three admins individually, selecting that password-update URL as each invitation's redirect. Ask recipients not to open the invitation until their access mappings have been added in the next step. Each person sets their own password through the private invitation flow. Never ask for or share passwords.
-5. Obtain each invited account's Auth user UUID from the Supabase dashboard. Run the following in the SQL Editor after replacing each placeholder with the matching UUID. Do not commit the completed query or UUIDs.
+3. For an existing Supabase project, run `supabase/migrations/002_toggle_likes_and_scope_comments.sql` once. It repairs photo-scoped comment reads, adds per-visitor like toggles, and initializes a minimum demo photo like count without resetting higher counts.
+4. Configure Auth email delivery first. The default SMTP server can deliver only to pre-authorized project-team addresses (and has a low send limit); use custom SMTP if these users are outside that team. Verify delivery before inviting.
+5. In Supabase Auth URL Configuration, set the Site URL to the deployed app origin and add `https://<deployment-host>/admin/password-update` to the redirect URL allow list. Invite the owner and three admins individually, selecting that password-update URL as each invitation's redirect. Ask recipients not to open the invitation until their access mappings have been added in the next step. Each person sets their own password through the private invitation flow. Never ask for or share passwords.
+6. Obtain each invited account's Auth user UUID from the Supabase dashboard. Run the following in the SQL Editor after replacing each placeholder with the matching UUID. Do not commit the completed query or UUIDs.
 
 ```sql
 insert into public.admin_access
